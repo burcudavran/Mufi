@@ -28,6 +28,11 @@ export default function Auth() {
       return
     }
 
+    if (!supabase) {
+      setMessage('Sunucu bağlantısı kurulamadı. Lütfen daha sonra tekrar dene.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {

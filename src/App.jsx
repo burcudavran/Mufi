@@ -104,13 +104,15 @@ export default function App() {
 
     async function init() {
       try {
-        const { data, error } = await withTimeout(supabase.auth.getSession())
-        if (error) throw error
-        if (!active) return
+        if (supabase) {
+          const { data, error } = await withTimeout(supabase.auth.getSession())
+          if (error) throw error
+          if (!active) return
 
-        const currentSession = data?.session ?? null
-        setSession(currentSession)
-        await loadProfile(currentSession?.user?.id ?? null)
+          const currentSession = data?.session ?? null
+          setSession(currentSession)
+          await loadProfile(currentSession?.user?.id ?? null)
+        }
       } catch (err) {
         console.error('[App] init hatası:', err.message)
         if (active) {
@@ -124,26 +126,30 @@ export default function App() {
 
     init()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, nextSession) => {
-        if (event === 'INITIAL_SESSION') return
-        if (!active) return
+    let subscription
+    if (supabase) {
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
+        async (event, nextSession) => {
+          if (event === 'INITIAL_SESSION') return
+          if (!active) return
 
-        try {
-          setSession(nextSession)
-          await loadProfile(nextSession?.user?.id ?? null)
-        } catch (err) {
-          console.warn('[App] onAuthStateChange hatası:', err.message)
-          if (active) setProfile(null)
-        } finally {
-          if (active) setBooting(false)
-        }
-      },
-    )
+          try {
+            setSession(nextSession)
+            await loadProfile(nextSession?.user?.id ?? null)
+          } catch (err) {
+            console.warn('[App] onAuthStateChange hatası:', err.message)
+            if (active) setProfile(null)
+          } finally {
+            if (active) setBooting(false)
+          }
+        },
+      )
+      subscription = sub
+    }
 
     return () => {
       active = false
-      subscription.unsubscribe()
+      if (subscription) subscription.unsubscribe()
     }
   }, [])
 
