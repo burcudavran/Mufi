@@ -27,8 +27,10 @@ export async function fetchProfile(userId) {
   return data
 }
 
-export async function saveProfile({ dietType, allergens, customAllergens }) {
-  const userId = await getAuthenticatedUserId()
+export async function saveProfile({ dietType, allergens, customAllergens }, userId) {
+  if (!userId) {
+    userId = await getAuthenticatedUserId()
+  }
 
   const allergensArray = Array.isArray(allergens)
     ? allergens.filter((item) => typeof item === 'string' && item.trim())

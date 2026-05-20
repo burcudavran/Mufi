@@ -6,7 +6,6 @@ import {
   formatSupabaseError,
   saveProfile,
 } from '../lib/profileService'
-import { supabase } from '../lib/supabase'
 
 const STEPS = ['diet', 'allergens']
 
@@ -27,27 +26,6 @@ export default function Onboarding({ user, onComplete }) {
     )
   }
 
-  async function resolveUserId() {
-    const {
-      data: { user: authUser },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    if (userError) {
-      throw userError
-    }
-
-    const userId = authUser?.id ?? user?.id
-
-    if (!userId) {
-      throw new Error(
-        'Kullanıcı kimliği alınamadı. Lütfen çıkış yapıp tekrar giriş yapın.',
-      )
-    }
-
-    return userId
-  }
-
   async function handleFinish() {
     if (!dietType) return
 
@@ -55,22 +33,16 @@ export default function Onboarding({ user, onComplete }) {
     setError(null)
 
     try {
-      await resolveUserId()
-
-      const allergensPayload = [...allergens]
-
       const profile = await saveProfile({
         dietType,
-        allergens: allergensPayload,
+        allergens: [...allergens],
         customAllergens: otherAllergens,
-      })
+      }, user?.id)
 
       onComplete(profile)
     } catch (err) {
       console.error('Profil kayıt hatası:', err)
-      const fullError = formatSupabaseError(err)
-      alert(`Profil kaydedilemedi:\n\n${fullError}`)
-      setError('Profil kaydedilemedi. Detaylar için uyarı kutusuna bakın.')
+      setError(formatSupabaseError(err))
     } finally {
       setIsSaving(false)
     }
