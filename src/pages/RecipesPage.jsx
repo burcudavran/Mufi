@@ -11,7 +11,7 @@ const LOADING_MESSAGES = [
 ]
 
 export default function RecipesPage() {
-  const { inventory } = useMufi()
+  const { inventory, profile } = useMufi()
   const [servings, setServings] = useState(2)
   const [loading, setLoading] = useState(false)
   const [recipes, setRecipes] = useState(null)
@@ -21,7 +21,7 @@ export default function RecipesPage() {
     setRecipes(null)
 
     try {
-      const data = await generateAIRecipes(inventory, servings)
+      const data = await generateAIRecipes(inventory, servings, profile)
       setRecipes(data)
     } catch (err) {
       console.error('Tarif oluşturma hatası:', err)

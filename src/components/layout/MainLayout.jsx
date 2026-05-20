@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { Settings } from 'lucide-react'
 import { BRAND } from '../../constants/brand'
 import BottomNav from './BottomNav'
 
@@ -31,6 +32,8 @@ export default function MainLayout({
   subtitle,
   children,
 }) {
+  const isSettings = activeTab === 'settings'
+
   return (
     <motion.div
       className="mx-auto flex min-h-svh w-full max-w-4xl flex-col bg-mufi-bg"
@@ -39,9 +42,24 @@ export default function MainLayout({
     >
       <BackgroundBlobs />
       <header className="safe-top shrink-0 px-6 pb-3 pt-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-mufi-secondary">
-          {BRAND.name}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-mufi-secondary">
+            {BRAND.name}
+          </p>
+          <motion.button
+            type="button"
+            onClick={() => setActiveTab(isSettings ? 'kitchen' : 'settings')}
+            whileTap={{ scale: 0.9 }}
+            className={`flex h-8 w-8 items-center justify-center rounded-xl transition ${
+              isSettings
+                ? 'bg-mufi-accent text-white'
+                : 'text-mufi-tertiary hover:bg-mufi-bg hover:text-mufi-secondary'
+            }`}
+            aria-label="Ayarlar"
+          >
+            <Settings className="h-4 w-4" strokeWidth={2} />
+          </motion.button>
+        </div>
         {title ? (
           <h1 className="mt-1 text-[30px] font-semibold leading-tight tracking-tight text-mufi-label">
             {title}

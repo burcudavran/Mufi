@@ -10,12 +10,14 @@ const Dashboard = lazy(() => import('./components/Dashboard'))
 const ScanPage = lazy(() => import('./pages/ScanPage'))
 const RecipesPage = lazy(() => import('./pages/RecipesPage'))
 const MarketPage = lazy(() => import('./pages/MarketPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 const TAB_META = {
   kitchen: { title: 'Mutfak',   subtitle: 'Dolabını akıllıca yönet.' },
   scan:    { title: 'Tarama',   subtitle: 'Ürünleri hızlıca tanı.'   },
   recipes: { title: 'Tarifler', subtitle: 'Sana uygun öneriler.'     },
   market:  { title: 'Market',   subtitle: 'Alışveriş listen hazır.'  },
+  settings: { title: 'Ayarlar', subtitle: 'Profil tercihlerin.'       },
 }
 
 function withTimeout(promise, ms = 7000) {
@@ -55,6 +57,7 @@ function MainApp({ profile }) {
       case 'scan':    return <ScanPage />
       case 'recipes': return <RecipesPage />
       case 'market':  return <MarketPage />
+      case 'settings': return <SettingsPage />
       default:        return <Dashboard />
     }
   }

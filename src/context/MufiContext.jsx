@@ -13,10 +13,19 @@ function loadInventory() {
 
 const MufiContext = createContext(null)
 
-export function MufiProvider({ children, profile = null }) {
+export function MufiProvider({ children, profile: initialProfile = null }) {
   const [inventory, setInventory] = useState(loadInventory)
   const [shoppingList, setShoppingList] = useState([])
   const [aiInsight, setAiInsight] = useState(MOCK_AI_INSIGHT)
+  const [currentProfile, setCurrentProfile] = useState(initialProfile)
+
+  useEffect(() => {
+    setCurrentProfile(initialProfile)
+  }, [initialProfile])
+
+  const updateProfile = useCallback((updated) => {
+    setCurrentProfile(updated)
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory))
@@ -59,7 +68,7 @@ export function MufiProvider({ children, profile = null }) {
 
   const value = useMemo(
     () => ({
-      profile,
+      profile: currentProfile,
       inventory,
       setInventory,
       shoppingList,
@@ -69,8 +78,9 @@ export function MufiProvider({ children, profile = null }) {
       setAiInsight,
       consumeItem,
       addManualItem,
+      updateProfile,
     }),
-    [profile, inventory, shoppingList, otonomShoppingList, aiInsight, consumeItem, addManualItem],
+    [currentProfile, inventory, shoppingList, otonomShoppingList, aiInsight, consumeItem, addManualItem, updateProfile],
   )
 
   return <MufiContext.Provider value={value}>{children}</MufiContext.Provider>
