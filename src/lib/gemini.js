@@ -9,7 +9,7 @@ async function fetchWithRetry(url, options, retries = 3) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const now = Date.now()
     const elapsed = now - lastRequest
-    const minGap = 12_000
+    const minGap = 2_000
     if (elapsed < minGap) {
       await new Promise((r) => setTimeout(r, minGap - elapsed))
     }
@@ -20,7 +20,7 @@ async function fetchWithRetry(url, options, retries = 3) {
     if (res.ok) return res
 
     if ((res.status === 429 || res.status === 503) && attempt < retries) {
-      const wait = (attempt + 1) * 15_000
+      const wait = (attempt + 1) * 3_000
       console.warn(`Gemini ${res.status}, ${wait / 1000}s bekleniyor (deneme ${attempt + 1}/${retries})...`)
       await new Promise((r) => setTimeout(r, wait))
       continue
