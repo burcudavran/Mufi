@@ -20,7 +20,7 @@ const TAB_META = {
   settings: { title: 'Ayarlar', subtitle: 'Profil tercihlerin.'       },
 }
 
-function withTimeout(promise, ms = 7000) {
+function withTimeout(promise, ms = 3000) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
