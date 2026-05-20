@@ -19,7 +19,7 @@ const FORM_CATEGORIES = INVENTORY_CATEGORIES.map((c) => ({
   label: c.label,
 }))
 
-const INITIAL_FORM = { name: '', category: 'dairy', quantity: '', expiryDate: defaultExpiry() }
+const INITIAL_FORM = { name: '', category: 'dairy', quantity: '', expiryDate: defaultExpiry(), storage: 'fridge' }
 
 function InventoryItem({ item, onConsume }) {
   const status = getExpiryStatus(item.expiryDate)
@@ -122,7 +122,7 @@ function ManualEntryForm({ onClose }) {
       category: form.category,
       quantity: form.quantity.trim() || '1 Adet',
       expiryDate: form.expiryDate,
-      storage: 'fridge',
+      storage: form.storage,
     })
 
     setForm(INITIAL_FORM)
@@ -194,6 +194,38 @@ function ManualEntryForm({ onClose }) {
             onChange={set('expiryDate')}
             className="w-full rounded-xl bg-mufi-bg px-3 py-2.5 text-[14px] text-mufi-label outline-none ring-1 ring-mufi-border transition focus:ring-2 focus:ring-mufi-accent/40"
           />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[12px] font-medium text-mufi-secondary">
+            Saklama Yeri
+          </label>
+          <div className="flex rounded-full bg-mufi-bg p-0.5 ring-1 ring-mufi-border">
+            <button
+              type="button"
+              onClick={() => setForm((p) => ({ ...p, storage: 'fridge' }))}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium transition ${
+                form.storage === 'fridge'
+                  ? 'bg-white text-mufi-label shadow-sm'
+                  : 'text-mufi-tertiary'
+              }`}
+            >
+              <Thermometer className="h-3.5 w-3.5" strokeWidth={2} />
+              Buzdolabı
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm((p) => ({ ...p, storage: 'freezer' }))}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium transition ${
+                form.storage === 'freezer'
+                  ? 'bg-white text-mufi-label shadow-sm'
+                  : 'text-mufi-tertiary'
+              }`}
+            >
+              <Snowflake className="h-3.5 w-3.5" strokeWidth={2} />
+              Dondurucu
+            </button>
+          </div>
         </div>
 
         {error && (
