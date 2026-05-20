@@ -1,9 +1,10 @@
 export const GLOBAL_MARKET_PRICES = {
   'Tavuk göğsü': {
     brands: {
-      'Tavuk Dünyası': { Migros: 120, CarrefourSA: 118, A101: 115, Şok: 117 },
-      'Lezita': { Migros: 125, CarrefourSA: 122, A101: 119, Şok: 121 },
-      'Şok Markaj': { Migros: 115, CarrefourSA: 113, A101: 110, Şok: 112 },
+      'Migros': { Migros: 110, CarrefourSA: 118, A101: 115, Şok: 117 },
+      'CarrefourSA': { Migros: 120, CarrefourSA: 108, A101: 117, Şok: 119 },
+      'A101': { Migros: 118, CarrefourSA: 116, A101: 105, Şok: 113 },
+      'Şok': { Migros: 117, CarrefourSA: 114, A101: 112, Şok: 103 },
     },
   },
   'Kıyma': {

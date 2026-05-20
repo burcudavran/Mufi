@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
-import { AlertCircle, ChefHat, Clock, Minus, Plus, Sparkles } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { AlertCircle, ChefHat, Clock, Minus, Plus, Sparkles, X } from 'lucide-react'
 import { useMufi } from '../context/MufiContext'
 import { generateAIRecipes } from '../lib/gemini'
 
@@ -19,21 +19,37 @@ export default function RecipesPage() {
   const [loadingMessage] = useState(
     () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
   )
+  const abortRef = useRef(null)
 
   async function handleGenerate() {
     setLoading(true)
     setRecipes(null)
     setError(null)
 
+    abortRef.current = new AbortController()
+
     try {
       const data = await generateAIRecipes(inventory, servings, profile)
-      setRecipes(data)
+      if (!abortRef.current?.signal.aborted) {
+        setRecipes(data)
+      }
     } catch (err) {
+      if (err.name === 'AbortError') return
       console.error('Tarif oluşturma hatası:', err)
       setError(err.message || 'Tarif oluşturulamadı. Lütfen daha sonra tekrar dene.')
     } finally {
-      setLoading(false)
+      if (!abortRef.current?.signal.aborted) {
+        setLoading(false)
+      }
     }
+  }
+
+  function handleCancel() {
+    if (abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+    }
+    setLoading(false)
   }
 
   return (
@@ -106,13 +122,21 @@ export default function RecipesPage() {
       </motion.button>
 
       {loading && (
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 text-center text-[14px] text-mufi-secondary"
+          className="mt-4 flex items-center justify-center gap-3"
         >
-          {loadingMessage}
-        </motion.p>
+          <p className="text-[14px] text-mufi-secondary">{loadingMessage}</p>
+          <motion.button
+            onClick={handleCancel}
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-[12px] font-medium text-red-500 ring-1 ring-red-200 transition hover:bg-red-100"
+          >
+            <X className="h-3 w-3" strokeWidth={2.5} />
+            İptal
+          </motion.button>
+        </motion.div>
       )}
 
       {error && (

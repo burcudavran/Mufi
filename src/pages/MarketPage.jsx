@@ -71,10 +71,10 @@ export default function MarketPage() {
             <ShoppingCart className="h-8 w-8 text-green-500" strokeWidth={1.5} />
           </div>
           <p className="text-[17px] font-semibold text-mufi-label">
-            Süper! Eksikler otonom olarak sipariş edildi
+            Süper! Sipariş simülasyonu tamamlandı
           </p>
           <p className="text-[14px] text-mufi-secondary">
-            Kurye yola çıkmak üzere! 🚀
+            Bu bir alışveriş simülasyonudur. Gerçek sipariş verilmemiştir.
           </p>
         </motion.div>
       </motion.div>
@@ -263,7 +263,7 @@ export default function MarketPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-indigo-700"
               >
                 <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-                Siparişi Tamamla 🚀
+                Sipariş Simülasyonu 🚀
               </motion.button>
             </motion.div>
           </div>

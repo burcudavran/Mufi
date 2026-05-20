@@ -31,6 +31,7 @@ export default function ScanPage() {
   const [scanMode, setScanMode] = useState('fridge')
   const [isScanning, setIsScanning] = useState(false)
   const [pendingItems, setPendingItems] = useState(null)
+  const [skippedCount, setSkippedCount] = useState(0)
   const [error, setError] = useState(null)
   const inputRef = useRef(null)
 
@@ -77,9 +78,7 @@ export default function ScanPage() {
       }
 
       setPendingItems(mapped)
-      if (skipped.length) {
-        setError(`${skipped.length} ürün kategorisi tanınamadığı için atlandı.`)
-      }
+      setSkippedCount(skipped.length)
     } catch (err) {
       setError(err.message || 'Görsel analiz edilemedi.')
     } finally {
@@ -96,10 +95,12 @@ export default function ScanPage() {
     if (!pendingItems || pendingItems.length === 0) return
     setInventory((prev) => [...pendingItems, ...prev])
     setPendingItems(null)
+    setSkippedCount(0)
   }
 
   function handleCancel() {
     setPendingItems(null)
+    setSkippedCount(0)
   }
 
   return (
@@ -136,9 +137,14 @@ export default function ScanPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <p className="mb-4 text-[15px] font-semibold text-mufi-label">
+          <p className="mb-1 text-[15px] font-semibold text-mufi-label">
             Mufi Bunları Tespit Etti, Onaylıyor musun? 🔍
           </p>
+          {skippedCount > 0 && (
+            <p className="mb-4 text-[12px] text-amber-600">
+              {skippedCount} ürün kategorisi tanınamadığı için atlandı.
+            </p>
+          )}
 
           <ul className="space-y-2">
             {pendingItems.map((item) => (

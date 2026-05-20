@@ -35,7 +35,6 @@ export default function SettingsPage() {
       })
       updateProfile(updated)
       setSuccess(true)
-      setTimeout(() => setSuccess(false), 2500)
     } catch {
       setError('Profil kaydedilemedi. Lütfen tekrar dene.')
     } finally {

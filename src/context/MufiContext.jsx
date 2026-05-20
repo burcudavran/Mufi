@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { MOCK_AI_INSIGHT, MOCK_INVENTORY } from '../constants/inventory'
+import { MOCK_INVENTORY } from '../constants/inventory'
 
 const STORAGE_KEY = 'mufi_inventory'
 
@@ -18,7 +18,7 @@ const MufiContext = createContext(null)
 export function MufiProvider({ children, profile: initialProfile = null }) {
   const [inventory, setInventory] = useState(loadInventory)
   const [shoppingList, setShoppingList] = useState([])
-  const [aiInsight, setAiInsight] = useState(MOCK_AI_INSIGHT)
+  const [toast, setToast] = useState(null)
   const [currentProfile, setCurrentProfile] = useState(initialProfile)
   const prevProfileRef = useRef(initialProfile)
 
@@ -42,9 +42,19 @@ export function MufiProvider({ children, profile: initialProfile = null }) {
       return prev.filter((i) => i.id !== itemId)
     })
     if (item) {
-      setShoppingList((prev) => [...prev, { ...item, consumedAt: Date.now() }])
+      const entry = { ...item, consumedAt: Date.now() }
+      setShoppingList((prev) => [...prev, entry])
+      setToast({ type: 'undo', message: `"${item.name}" tükenmiş olarak işaretlendi`, data: entry })
     }
   }, [])
+
+  const undoConsume = useCallback((entry) => {
+    setShoppingList((prev) => prev.filter((i) => i.consumedAt !== entry.consumedAt))
+    setInventory((prev) => [{ ...entry, id: crypto.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2) }, ...prev])
+    setToast(null)
+  }, [])
+
+  const dismissToast = useCallback(() => setToast(null), [])
 
   const addManualItem = useCallback((newItem) => {
     const id = crypto.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2)
@@ -72,6 +82,38 @@ export function MufiProvider({ children, profile: initialProfile = null }) {
     ]
   }, [inventory, shoppingList])
 
+  const aiInsight = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const expired = inventory.filter((item) => {
+      const expiry = new Date(item.expiryDate)
+      expiry.setHours(0, 0, 0, 0)
+      return expiry.getTime() < today.getTime()
+    })
+    const urgent = inventory.filter((item) => {
+      const expiry = new Date(item.expiryDate)
+      expiry.setHours(0, 0, 0, 0)
+      const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      return daysLeft >= 0 && daysLeft <= 2
+    })
+    const meatCount = inventory.filter((i) => i.category === 'meat').length
+
+    if (expired.length > 0) {
+      const names = expired.map((i) => i.name).slice(0, 3).join(', ')
+      return `Dolabında süresi geçmiş ${expired.length} ürün bulunuyor (${names}${expired.length > 3 ? '...' : ''}). Hemen kontrol etmeni öneririm!`
+    }
+    if (urgent.length > 0) {
+      return `Dolabında tarihi yaklaşan ${urgent.length} ürünün var, öncelikle onları tüketmeye ne dersin?`
+    }
+    if (meatCount > 3) {
+      return `${meatCount} çeşit et/tavuk ürünün var. Haftanın yemek planını yapmaya hazırsın!`
+    }
+    if (inventory.length === 0) {
+      return 'Dolabın bomboş görünüyor. Hadi bir alışveriş listesi oluşturalım!'
+    }
+    return 'Tüm ürünlerinin tarihleri gayet iyi durumda. Mufi senin için her şeyi kontrol altında tutuyor!'
+  }, [inventory])
+
   const value = useMemo(
     () => ({
       profile: currentProfile,
@@ -81,12 +123,15 @@ export function MufiProvider({ children, profile: initialProfile = null }) {
       setShoppingList,
       otonomShoppingList,
       aiInsight,
-      setAiInsight,
+      toast,
+      setToast,
+      dismissToast,
       consumeItem,
+      undoConsume,
       addManualItem,
       updateProfile,
     }),
-    [currentProfile, inventory, shoppingList, otonomShoppingList, aiInsight, consumeItem, addManualItem, updateProfile],
+    [currentProfile, inventory, shoppingList, otonomShoppingList, aiInsight, toast, consumeItem, undoConsume, addManualItem, updateProfile, dismissToast],
   )
 
   return <MufiContext.Provider value={value}>{children}</MufiContext.Provider>

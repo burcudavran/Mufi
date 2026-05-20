@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState } from 'react'
-import { Plus, Snowflake, Sparkles, Thermometer, Utensils, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Plus, RotateCcw, Snowflake, Sparkles, Thermometer, Utensils, X } from 'lucide-react'
 import { INVENTORY_CATEGORIES } from '../constants/inventory'
 import { useMufi } from '../context/MufiContext'
 import { formatExpiryDate, getExpiryStatus } from '../lib/expiryUtils'
@@ -224,20 +224,21 @@ function ManualEntryForm({ onClose }) {
 }
 
 export default function Dashboard() {
-  const { inventory, shoppingList, consumeItem } = useMufi()
+  const { inventory, aiInsight, consumeItem, undoConsume, toast, dismissToast } = useMufi()
   const [storageTab, setStorageTab] = useState('fridge')
   const [showForm, setShowForm] = useState(false)
+  const undoTimerRef = useRef(null)
+
+  useEffect(() => {
+    if (toast?.type === 'undo') {
+      clearTimeout(undoTimerRef.current)
+      undoTimerRef.current = setTimeout(() => { dismissToast() }, 4000)
+      return () => clearTimeout(undoTimerRef.current)
+    }
+  }, [toast, dismissToast])
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const criticalCount = inventory.filter((item) => {
-    const expiry = new Date(item.expiryDate)
-    expiry.setHours(0, 0, 0, 0)
-    const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    return daysLeft >= 0 && daysLeft <= 3
-  }).length
-
-  const shoppingListCount = shoppingList.length
 
   const filtered = inventory.filter((item) => item.storage === storageTab)
   const counts = {
@@ -273,18 +274,28 @@ export default function Dashboard() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-mufi-accent">
               Mufi AI
             </p>
-            <p className="mt-1 text-[14px] leading-relaxed text-mufi-label">
-              {criticalCount > 0
-                ? `Dolabında tarihi yaklaşan ${criticalCount} ürünün var`
-                : 'Tüm ürünlerinin tarihleri gayet iyi durumda'}
-              {shoppingListCount > 0 && (
-                <>, sepetinde ise {shoppingListCount} eksik bulunuyor.</>
-              )}
-              {' '}Mufi senin için her şeyi kontrol altında tutuyor!
-            </p>
+            <p className="mt-1 text-[14px] leading-relaxed text-mufi-label">{aiInsight}</p>
           </div>
         </div>
       </motion.section>
+
+      {toast?.type === 'undo' && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"
+        >
+          <p className="flex-1 text-[13px] text-amber-800">{toast.message}</p>
+          <motion.button
+            onClick={() => { clearTimeout(undoTimerRef.current); undoConsume(toast.data); }}
+            whileTap={{ scale: 0.94 }}
+            className="flex items-center gap-1 rounded-xl bg-amber-100 px-3 py-1.5 text-[12px] font-semibold text-amber-700 transition hover:bg-amber-200"
+          >
+            <RotateCcw className="h-3 w-3" strokeWidth={2.5} />
+            Geri Al
+          </motion.button>
+        </motion.div>
+      )}
 
       <div className="flex items-center gap-2">
         <motion.button
@@ -350,36 +361,60 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-4">
-          {INVENTORY_CATEGORIES.map((category, index) => {
-            const items = filtered.filter(
-              (item) => item.category === category.id,
-            )
-            if (items.length === 0) return null
-
-            return (
-              <motion.article
-                key={category.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.06 }}
-                whileHover={{ y: -2, boxShadow: '0 12px 28px rgba(0,0,0,0.06)' }}
-                className="rounded-3xl border border-mufi-border bg-white p-4 shadow-card transition-shadow"
+          {filtered.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-3 py-10 text-center"
+            >
+              <Thermometer className="h-10 w-10 text-mufi-tertiary" strokeWidth={1.5} />
+              <p className="text-[15px] font-medium text-mufi-label">
+                {storageTab === 'fridge' ? 'Soğutucuda ürün yok' : 'Dondurucuda ürün yok'}
+              </p>
+              <p className="max-w-xs text-[13px] text-mufi-secondary">
+                Yeni ürün eklemek için yukarıdaki butonu kullan veya Tarama sayfasından fotoğraf çek.
+              </p>
+              <motion.button
+                onClick={() => { setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                whileTap={{ scale: 0.96 }}
+                className="flex items-center gap-1.5 rounded-xl bg-mufi-accent px-4 py-2 text-[13px] font-semibold text-white shadow-sm"
               >
-                <h3 className="mb-3 text-[13px] font-semibold uppercase tracking-wider text-mufi-secondary">
-                  {category.label}
-                </h3>
-                <ul className="space-y-2">
-                  {items.map((item) => (
-                    <InventoryItem
-                      key={item.id}
-                      item={item}
-                      onConsume={consumeItem}
-                    />
-                  ))}
-                </ul>
-              </motion.article>
-            )
-          })}
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
+                Ürün Ekle
+              </motion.button>
+            </motion.div>
+          ) : (
+            INVENTORY_CATEGORIES.map((category, index) => {
+              const items = filtered.filter(
+                (item) => item.category === category.id,
+              )
+              if (items.length === 0) return null
+
+              return (
+                <motion.article
+                  key={category.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.06 }}
+                  whileHover={{ y: -2, boxShadow: '0 12px 28px rgba(0,0,0,0.06)' }}
+                  className="rounded-3xl border border-mufi-border bg-white p-4 shadow-card transition-shadow"
+                >
+                  <h3 className="mb-3 text-[13px] font-semibold uppercase tracking-wider text-mufi-secondary">
+                    {category.label}
+                  </h3>
+                  <ul className="space-y-2">
+                    {items.map((item) => (
+                      <InventoryItem
+                        key={item.id}
+                        item={item}
+                        onConsume={consumeItem}
+                      />
+                    ))}
+                  </ul>
+                </motion.article>
+              )
+            })
+          )}
         </div>
       </section>
     </div>
