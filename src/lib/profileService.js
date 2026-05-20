@@ -55,13 +55,11 @@ export async function saveProfile({ dietType, allergens, customAllergens }, user
 
 export function formatSupabaseError(error) {
   if (!error) return 'Bilinmeyen hata'
-
   const parts = [
     error.message,
     error.details,
     error.hint,
     error.code ? `Kod: ${error.code}` : null,
   ].filter(Boolean)
-
-  return `${parts.join('\n')}\n\n${JSON.stringify(error, null, 2)}`
+  return parts.join(' — ')
 }
