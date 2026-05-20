@@ -1,11 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { MOCK_INVENTORY } from '../constants/inventory'
 
-const STORAGE_KEY = 'mufi_inventory'
+function storageKey(userId) {
+  return userId ? `mufi_inventory_${userId}` : 'mufi_inventory'
+}
 
-function loadInventory() {
+function loadInventory(userId) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(storageKey(userId))
     if (raw) return JSON.parse(raw)
   } catch {
     // localStorage okunamazsa mock ile devam
@@ -16,7 +18,7 @@ function loadInventory() {
 const MufiContext = createContext(null)
 
 export function MufiProvider({ children, profile: initialProfile = null }) {
-  const [inventory, setInventory] = useState(loadInventory)
+  const [inventory, setInventory] = useState(() => loadInventory(initialProfile?.id))
   const [shoppingList, setShoppingList] = useState([])
   const [toast, setToast] = useState(null)
   const [currentProfile, setCurrentProfile] = useState(initialProfile)
@@ -27,13 +29,20 @@ export function MufiProvider({ children, profile: initialProfile = null }) {
     setCurrentProfile(initialProfile)
   }
 
+  const userId = currentProfile?.id
+
+  useEffect(() => {
+    if (!userId) return
+    setInventory(loadInventory(userId))
+  }, [userId])
+
   const updateProfile = useCallback((updated) => {
     setCurrentProfile(updated)
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory))
-  }, [inventory])
+    localStorage.setItem(storageKey(userId), JSON.stringify(inventory))
+  }, [inventory, userId])
 
   const consumeItem = useCallback((itemId) => {
     let item = null
