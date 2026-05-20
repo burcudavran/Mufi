@@ -2,18 +2,34 @@ const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY
 const GEMINI_ENDPOINT =
   'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent'
 
-// ---------- rate limiter (12sn aralık, Gemini free tier 5 req/dk) ----------
+// ---------- rate limiter + retry (429/503 için) ----------
 let lastRequest = 0
 
-async function rateLimitedFetch(url, options) {
-  const now = Date.now()
-  const elapsed = now - lastRequest
-  const minGap = 12_000
-  if (elapsed < minGap) {
-    await new Promise((r) => setTimeout(r, minGap - elapsed))
+async function fetchWithRetry(url, options, retries = 3) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const now = Date.now()
+    const elapsed = now - lastRequest
+    const minGap = 12_000
+    if (elapsed < minGap) {
+      await new Promise((r) => setTimeout(r, minGap - elapsed))
+    }
+    lastRequest = Date.now()
+
+    const res = await fetch(url, options)
+
+    if (res.ok) return res
+
+    if ((res.status === 429 || res.status === 503) && attempt < retries) {
+      const wait = (attempt + 1) * 15_000
+      console.warn(`Gemini ${res.status}, ${wait / 1000}s bekleniyor (deneme ${attempt + 1}/${retries})...`)
+      await new Promise((r) => setTimeout(r, wait))
+      continue
+    }
+
+    throw new Error(`Gemini API hatası (${res.status}): ${await res.text()}`)
   }
-  lastRequest = Date.now()
-  return fetch(url, options)
+
+  throw new Error('Gemini API çok yoğun, lütfen daha sonra tekrar dene.')
 }
 
 // ---------- promptlar ----------
@@ -52,7 +68,7 @@ Yanıtı KESİNLİKLE sadece şu saf JSON formatında döndür, başka hiçbir a
 ]`
 
 async function callGemini(prompt, base64Data, mimeType) {
-  const res = await rateLimitedFetch(`${GEMINI_ENDPOINT}?key=${GEMINI_KEY}`, {
+  const res = await fetchWithRetry(`${GEMINI_ENDPOINT}?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -66,10 +82,6 @@ async function callGemini(prompt, base64Data, mimeType) {
       ],
     }),
   })
-
-  if (!res.ok) {
-    throw new Error(`Gemini API hatası (${res.status}): ${await res.text()}`)
-  }
 
   const json = await res.json()
   const text = json.candidates?.[0]?.content?.parts?.[0]?.text
@@ -124,7 +136,7 @@ export async function generateAIRecipes(inventoryItems, portionCount, profile = 
     ...(profile?.custom_allergens ? profile.custom_allergens.split(',').map((a) => a.trim()).filter(Boolean) : []),
   ]
 
-  const res = await rateLimitedFetch(`${GEMINI_ENDPOINT}?key=${GEMINI_KEY}`, {
+  const res = await fetchWithRetry(`${GEMINI_ENDPOINT}?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -137,10 +149,6 @@ export async function generateAIRecipes(inventoryItems, portionCount, profile = 
       ],
     }),
   })
-
-  if (!res.ok) {
-    throw new Error(`Gemini API hatası (${res.status}): ${await res.text()}`)
-  }
 
   const json = await res.json()
   const text = json.candidates?.[0]?.content?.parts?.[0]?.text
