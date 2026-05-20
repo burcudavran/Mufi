@@ -8,7 +8,10 @@ import { formatExpiryDate, getExpiryStatus } from '../lib/expiryUtils'
 function defaultExpiry() {
   const d = new Date()
   d.setDate(d.getDate() + 5)
-  return d.toISOString().slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 const FORM_CATEGORIES = INVENTORY_CATEGORIES.map((c) => ({
@@ -26,7 +29,7 @@ function InventoryItem({ item, onConsume }) {
   return (
     <motion.li
       whileHover={{ scale: 1.01, x: 2 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      transition={{ duration: 0.15 }}
       className={`flex items-start justify-between gap-3 rounded-2xl px-3.5 py-3 transition ${
         isUrgent
           ? 'bg-orange-50/90 ring-1 ring-orange-200/80'

@@ -54,13 +54,15 @@ export default function ScanPage() {
 
       const raw = await analyzeInventoryImage(base64, file.type, scanMode)
 
+      const skipped = raw.filter((item) => !(item.category in CATEGORY_MAP))
       const mapped = raw
         .filter((item) => item.category in CATEGORY_MAP)
         .map((item) => {
           const expiryDate = new Date()
           expiryDate.setDate(expiryDate.getDate() + (item.shelf_life_days || 7))
+          const id = crypto.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2)
           return {
-            id: Date.now() + Math.random(),
+            id,
             name: item.name,
             category: CATEGORY_MAP[item.category],
             expiryDate: expiryDate.toISOString().slice(0, 10),
@@ -69,7 +71,15 @@ export default function ScanPage() {
           }
         })
 
+      if (!mapped.length && skipped.length) {
+        setError(`Mufi ürünleri tanımlayamadı (kategori eşleşmedi). Farklı bir açıdan tekrar dene.`)
+        return
+      }
+
       setPendingItems(mapped)
+      if (skipped.length) {
+        setError(`${skipped.length} ürün kategorisi tanınamadığı için atlandı.`)
+      }
     } catch (err) {
       setError(err.message || 'Görsel analiz edilemedi.')
     } finally {

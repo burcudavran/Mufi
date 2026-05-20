@@ -7,7 +7,7 @@ export const INVENTORY_CATEGORIES = [
 
 function daysFromNow(days) {
   const date = new Date()
-  date.setHours(12, 0, 0, 0)
+  date.setHours(0, 0, 0, 0)
   date.setDate(date.getDate() + days)
   return date.toISOString().slice(0, 10)
 }

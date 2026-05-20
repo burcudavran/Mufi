@@ -91,7 +91,11 @@ async function callGemini(prompt, base64Data, mimeType) {
   }
 
   const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
-  return JSON.parse(cleaned)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    throw new Error(`Gemini yanıtı çözülemedi: ${cleaned.slice(0, 200)}`)
+  }
 }
 
 export async function analyzeInventoryImage(base64Data, mimeType, scanMode = 'fridge') {
@@ -158,5 +162,9 @@ export async function generateAIRecipes(inventoryItems, portionCount, profile = 
   }
 
   const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
-  return JSON.parse(cleaned)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    throw new Error(`Gemini tarif yanıtı çözülemedi: ${cleaned.slice(0, 200)}`)
+  }
 }

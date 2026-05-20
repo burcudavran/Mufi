@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ShoppingCart, Store, Target, Trophy } from 'lucide-react'
 import { useMufi } from '../context/MufiContext'
 import { fetchMarketPrices } from '../services/marketApi'
@@ -18,30 +18,37 @@ const MARKET_COLORS = {
 }
 
 export default function MarketPage() {
-  const { otonomShoppingList: mergedList, shoppingList, setShoppingList, inventory } = useMufi()
+  const { otonomShoppingList: mergedList, setShoppingList, inventory } = useMufi()
   const [strategy, setStrategy] = useState('cheapest')
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState(null)
   const [ordered, setOrdered] = useState(false)
 
-  useEffect(() => {
-    if (mergedList.length === 0) {
-      setData(null)
-      return
-    }
-    let cancelled = false
-    setLoading(true)
-    setData(null)
+  const mergedListKey = useMemo(
+    () => mergedList.map((i) => `${i.id}_${i.name}`).join('|'),
+    [mergedList],
+  )
 
-    fetchMarketPrices(mergedList, strategy, inventory).then((result) => {
+  useEffect(() => {
+    if (mergedList.length === 0) return
+
+    let cancelled = false
+
+    ;(async () => {
+      setLoading(true)
+      setData(null)
+
+      const result = await fetchMarketPrices(mergedList, strategy, inventory)
       if (!cancelled) {
         setData(result)
         setLoading(false)
       }
-    })
+    })()
 
     return () => { cancelled = true }
-  }, [mergedList.length, strategy, inventory])
+    // mergedListKey tracks content changes, mergedList.length handles empty state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mergedListKey, mergedList.length, strategy, inventory])
 
   function handleOrder() {
     setOrdered(true)

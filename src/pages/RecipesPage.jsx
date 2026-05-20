@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { ChefHat, Clock, Minus, Plus, Sparkles } from 'lucide-react'
+import { AlertCircle, ChefHat, Clock, Minus, Plus, Sparkles } from 'lucide-react'
 import { useMufi } from '../context/MufiContext'
 import { generateAIRecipes } from '../lib/gemini'
 
@@ -15,16 +15,22 @@ export default function RecipesPage() {
   const [servings, setServings] = useState(2)
   const [loading, setLoading] = useState(false)
   const [recipes, setRecipes] = useState(null)
+  const [error, setError] = useState(null)
+  const [loadingMessage] = useState(
+    () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
+  )
 
   async function handleGenerate() {
     setLoading(true)
     setRecipes(null)
+    setError(null)
 
     try {
       const data = await generateAIRecipes(inventory, servings, profile)
       setRecipes(data)
     } catch (err) {
       console.error('Tarif oluşturma hatası:', err)
+      setError(err.message || 'Tarif oluşturulamadı. Lütfen daha sonra tekrar dene.')
     } finally {
       setLoading(false)
     }
@@ -105,8 +111,19 @@ export default function RecipesPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mt-4 text-center text-[14px] text-mufi-secondary"
         >
-          {LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]}
+          {loadingMessage}
         </motion.p>
+      )}
+
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-[14px] text-red-600"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {error}
+        </motion.div>
       )}
 
       {recipes && (

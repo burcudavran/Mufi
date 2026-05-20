@@ -3,7 +3,7 @@ export const GLOBAL_MARKET_PRICES = {
     brands: {
       'Tavuk Dünyası': { Migros: 120, CarrefourSA: 118, A101: 115, Şok: 117 },
       'Lezita': { Migros: 125, CarrefourSA: 122, A101: 119, Şok: 121 },
-      'Şok Market': { Migros: 20, CarrefourSA: 22, A101: 18, Şok: 15 },
+      'Şok Markaj': { Migros: 115, CarrefourSA: 113, A101: 110, Şok: 112 },
     },
   },
   'Kıyma': {

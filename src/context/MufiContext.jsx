@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { MOCK_AI_INSIGHT, MOCK_INVENTORY } from '../constants/inventory'
 
 const STORAGE_KEY = 'mufi_inventory'
@@ -7,7 +7,9 @@ function loadInventory() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
-  } catch {}
+  } catch {
+    // localStorage okunamazsa mock ile devam
+  }
   return MOCK_INVENTORY
 }
 
@@ -18,10 +20,12 @@ export function MufiProvider({ children, profile: initialProfile = null }) {
   const [shoppingList, setShoppingList] = useState([])
   const [aiInsight, setAiInsight] = useState(MOCK_AI_INSIGHT)
   const [currentProfile, setCurrentProfile] = useState(initialProfile)
+  const prevProfileRef = useRef(initialProfile)
 
-  useEffect(() => {
+  if (prevProfileRef.current !== initialProfile) {
+    prevProfileRef.current = initialProfile
     setCurrentProfile(initialProfile)
-  }, [initialProfile])
+  }
 
   const updateProfile = useCallback((updated) => {
     setCurrentProfile(updated)
@@ -32,18 +36,20 @@ export function MufiProvider({ children, profile: initialProfile = null }) {
   }, [inventory])
 
   const consumeItem = useCallback((itemId) => {
+    let item = null
     setInventory((prev) => {
-      const item = prev.find((i) => i.id === itemId)
-      if (item) {
-        setShoppingList((s) => [...s, { ...item, consumedAt: Date.now() }])
-      }
+      item = prev.find((i) => i.id === itemId) ?? null
       return prev.filter((i) => i.id !== itemId)
     })
+    if (item) {
+      setShoppingList((prev) => [...prev, { ...item, consumedAt: Date.now() }])
+    }
   }, [])
 
   const addManualItem = useCallback((newItem) => {
+    const id = crypto.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2)
     setInventory((prev) => [
-      { id: Date.now().toString(), ...newItem },
+      { id, ...newItem },
       ...prev,
     ])
   }, [])
@@ -86,6 +92,7 @@ export function MufiProvider({ children, profile: initialProfile = null }) {
   return <MufiContext.Provider value={value}>{children}</MufiContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMufi() {
   const context = useContext(MufiContext)
   if (!context) {
